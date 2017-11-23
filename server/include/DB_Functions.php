@@ -73,6 +73,86 @@ class DB_Functions {
             return false;
         }
     }
+    public function getUser($uid){
+        $result = mysql_query("SELECT * FROM users where unique_id = '$uid'") or die(mysql_error());
+         $no_of_rows = mysql_num_rows($result);
+        if ($no_of_rows > 0) {
+            
+            return $result;
+        }else {
+            // user not found
+            return false;
+        }
+    }
+   
+    public function checkpass($uid,$password){
+         $result = mysql_query("SELECT * FROM users WHERE unique_id = '".$uid."'") or die(mysql_error());
+        // check for result 
+        $no_of_rows = mysql_num_rows($result);
+        if ($no_of_rows > 0) {
+            $result = mysql_fetch_array($result);
+            $salt = $result['salt'];
+            $encrypted_password = $result['encrypted_password'];
+            $hash = $this->checkhashSSHA($salt, $password);
+            // check for password equality
+            if ($encrypted_password == $hash) {
+                // user authentication details are correct
+                return $result;
+            }
+        } else {
+            // user not found
+            return false;
+        }
+    }
+     public function updateUser($uid,$name, $email,$gender, $password,$address,$phone,$mcv) {
+       $semi = false;
+       $cmd='UPDATE users SET ';
+       if(strlen($name)>0){
+            $cmd = $cmd.' name="'.$name.'"';
+            $semi = true;
+        }
+        if(strlen($email)>0){
+            if( $semi == true) $cmd= $cmd.' , ';
+            $cmd = $cmd.' email="'.$email.'"';
+             $semi = true;
+        }
+        if(strlen($password)>0){
+        $hash = $this->hashSSHA($password);
+        $encrypted_password = $hash["encrypted"]; // encrypted password
+        $salt = $hash["salt"]; // salt
+         if( $semi == true) $cmd= $cmd.' , ';
+        $cmd = $cmd.' encrypted_password="'.$encrypted_password.'", salt="'.$salt.'" ';
+         $semi = true;
+        }
+        if(strlen($address)>0){
+             if( $semi == true) $cmd= $cmd.' , ';
+            $cmd = $cmd.'address="'.$address.'"';
+             $semi = true;
+        }
+        if(strlen($phone)>0){
+             if( $semi == true) $cmd= $cmd.' , ';
+            $cmd = $cmd.' PhoneNumber="'.$phone.'"';
+             $semi = true;
+        }
+        if(strlen($mcv)>0){
+             if( $semi == true) $cmd= $cmd.' , ';
+            $cmd = $cmd.' mcv="'.$mcv.'"';
+             $semi = true;
+        }
+        if( $semi == true) $cmd= $cmd.' , ';
+        $cmd = $cmd.'gender = '.$gender.', updated_at = NOW() where unique_id= "'.$uid.'"';
+        echo $cmd;
+        $result = mysql_query($cmd);
+        // check for successful store
+        if ($result) {
+            // get user details 
+            $result = mysql_query("SELECT * FROM users WHERE unique_id = \"".$uid."\"");
+            // return user details
+            return $result;
+        } else {
+            return false;
+        }
+    }
     /**
      * Check user is existed or not
      */
